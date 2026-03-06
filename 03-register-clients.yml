@@ -1,0 +1,21 @@
+---
+- name: Universal IdM Registration with DNS
+  hosts: idm_clients
+  become: true
+  vars:
+    ipaadmin_password: "CHANGEME"
+    idm_server: "idm.redhat.lan"
+
+  tasks:
+    - name: Pre-create host entry on IdM server via delegation
+      delegate_to: "{{ idm_server }}"
+      freeipa.ansible_freeipa.ipahost:
+        ipaadmin_password: "{{ ipaadmin_password }}"
+        name: "{{ inventory_hostname }}"
+        ip_address: "{{ ansible_default_ipv4.address }}"
+        update_dns: yes
+        state: present
+
+    - name: Enroll the client
+      include_role:
+        name: freeipa.ansible_freeipa.ipaclient
