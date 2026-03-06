@@ -3,7 +3,7 @@
   hosts: idm_clients
   become: true
   vars:
-    ipaadmin_password: "CHANGEME"
+    ipaadmin_password: "CHANGEME" # In production, use Ansible vault
     idm_server: "idm.redhat.lan"
 
   tasks:
