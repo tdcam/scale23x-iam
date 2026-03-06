@@ -4,17 +4,11 @@
   gather_facts: false
   tasks:
     - name: Install IPA server and DNS packages
-      ansible.builtin.dnf5:
+      ansible.builtin.dnf:
         name:
           - ipa-server
           - ipa-server-dns
         state: present
-
-    - name: Enable the service
-      ansible.builtin.systemd_service:
-        name: ipa
-        enabled: true
-        state: started
 
     - name: Open ldap ports
       ansible.posix.firewalld:
@@ -43,3 +37,10 @@
         state: enabled
         permanent: true
         immediate: true
+
+# removed because the server hasn't been configured yet   
+#    - name: Enable the service
+#      ansible.builtin.systemd_service:
+#        name: ipa
+#        enabled: true
+#        state: started
