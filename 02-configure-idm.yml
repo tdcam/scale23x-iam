@@ -15,8 +15,7 @@
     ipaserver_setup_dns: true
     ipaserver_forwarders:
       - 8.8.8.8
-      - 4.4.4.4
-    ipaserver_forward_policy: only
+      - 4.2.2.1
 
     # Optional: IdM automatically adds its services to the default firewalld zone (usually 'public').
     # Uncomment and specify a zone name if you want to use a custom firewalld zone.

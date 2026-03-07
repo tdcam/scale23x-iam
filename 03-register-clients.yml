@@ -1,6 +1,6 @@
 ---
 - name: Universal IdM Registration with DNS
-  hosts: idm_clients
+  hosts: web
   become: true
   vars:
     ipaadmin_password: "CHANGEME" # In production, use Ansible vault
