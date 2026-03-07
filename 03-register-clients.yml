@@ -5,7 +5,7 @@
   vars:
     # Mirroring your command line arguments
     ipaadmin_principal: admin
-    ipaadmin_password: red22hat
+    ipaadmin_password: CHANGEME
     ipaclient_domain: redhat.lan
     ipaclient_servers:
       - idm.redhat.lan
