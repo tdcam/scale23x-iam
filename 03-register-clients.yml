@@ -1,21 +1,23 @@
 ---
-- name: Universal IdM Registration with DNS
-  hosts: web
+- name: Install FreeIPA Client
+  hosts: workstation1.redhat.lan
   become: true
   vars:
-    ipaadmin_password: "CHANGEME" # In production, use Ansible vault
-    idm_server: "idm.redhat.lan"
+    # Mirroring your command line arguments
+    ipaadmin_principal: admin
+    ipaadmin_password: red22hat
+    ipaclient_domain: redhat.lan
+    ipaclient_servers:
+      - idm.redhat.lan
+    ipaclient_ntp_servers:
+      - idm.redhat.lan
+    ipaclient_mkhomedir: true
+    ipaclient_allow_dns_updates: true
+    ipaclient_force_join: true
+    # Note: The role handles hostname -f and hostname -i automatically
+    # if ipaclient_use_otp is not used and dns is configured.
 
   tasks:
-    - name: Pre-create host entry on IdM server via delegation
-      delegate_to: "{{ idm_server }}"
-      freeipa.ansible_freeipa.ipahost:
-        ipaadmin_password: "{{ ipaadmin_password }}"
-        name: "{{ inventory_hostname }}"
-        ip_address: "{{ ansible_default_ipv4.address }}"
-        update_dns: yes
-        state: present
-
-    - name: Enroll the client
-      include_role:
+    - name: Import ipaclient role
+      ansible.builtin.import_role:
         name: freeipa.ansible_freeipa.ipaclient
