@@ -209,6 +209,7 @@ systemctl enable --now kea-dhcp-ddns
 systemctl restart kea-dhcp4
 
 -------------------------------------------------
+
 Create a small text file named test_update.txt
 
 server 192.168.122.2
