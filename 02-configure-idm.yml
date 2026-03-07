@@ -1,26 +1,28 @@
 ---
 - name: Playbook to configure IPA server
-  hosts: idm
+  hosts: ipaserver
   become: true
   vars:
-    # Basic domain and realm configuration
+    # Basic Setup
     ipaserver_domain: redhat.lan
     ipaserver_realm: REDHAT.LAN
-
-    # Required passwords (in a production environment, use Ansible Vault)
     ipaadmin_password: CHANGEME
     ipadm_password: CHANGEME
+    ipaserver_hostname: idm.redhat.lan
+    ipaserver_ip_addresses: ["192.168.122.2"]
 
-    # Integrated DNS configuration
-    ipaserver_setup_dns: true
+    # DNS Configuration
+    ipaserver_setup_dns: yes
+    ipaserver_no_host_dns: yes
+    ipaserver_auto_reverse: yes
     ipaserver_forwarders:
       - 8.8.8.8
       - 4.2.2.1
 
-    # Optional: IdM automatically adds its services to the default firewalld zone (usually 'public').
-    # Uncomment and specify a zone name if you want to use a custom firewalld zone.
-    # ipaserver_firewalld_zone: custom_zone
+    # Other Options
+    ipaclient_mkhomedir: yes
+    ipaclient_ntp_pool: pool.ntp.org
 
   roles:
-  - role: freeipa.ansible_freeipa.ipaserver
-    state: present
+    - role: freeipa.ansible_freeipa.ipaserver
+      state: present
