@@ -5,6 +5,10 @@ Note that this requires that the machine running Ansible has the
 ansible-freeipa package installed, which contains the role for the
 freeipa server. This works on Fedora, RHEL, or CentOS Stream.
 
+Note that the TSIG keys used in this are for illustration only. They
+were used for my demo, and that demo environment has already been 
+nuked.
+
 I installed the IdM server with the following settings. Obviously,
 change things like the hostname, domain name, realm name, etc. to 
 values which match your environment.
