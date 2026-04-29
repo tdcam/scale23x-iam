@@ -1,0 +1,14 @@
+<network>
+  <name>default</name>
+  <uuid>b797c090-d978-4663-9435-1fd2cb27f78b</uuid>
+  <forward mode='nat'/>
+  <bridge name='virbr0' stp='on' delay='0'/>
+  <mac address='52:54:00:86:ab:97'/>
+  <domain name='redhat.lan' localOnly='yes' register='yes'/>
+  <ip address='192.168.122.1' netmask='255.255.255.0'>
+    <dhcp>
+      <range start='192.168.122.2' end='192.168.122.254'/>
+      <host mac='52:54:00:07:0a:33' name='idm' ip='192.168.122.2'/>
+    </dhcp>
+  </ip>
+</network>
