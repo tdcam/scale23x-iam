@@ -1,0 +1,73 @@
+---
+- name: Automate FreeIPA SSH Certificate Rotation and Trust
+  hosts: all #Change this to the actual target machines
+  become: true
+  vars:
+    ipa_realm: "REDHAT.LAN"
+    ssh_key_path: "/etc/ssh/ssh_host_rsa_key"
+    ssh_cert_path: "/etc/ssh/ssh_host_rsa_key-cert.pub"
+
+  tasks:
+    - name: Ensure SSH host key is in PEM format for Certmonger
+      shell: |
+        if ! head -n 1 {{ ssh_key_path }} | grep -q "RSA PRIVATE KEY"; then
+          ssh-keygen -p -N "" -m PEM -f {{ ssh_key_path }}
+        fi
+      register: key_format
+
+    - name: Create SELinux policy for Certmonger access to SSH keys
+      copy:
+        dest: /tmp/certmongerlocal.te
+        content: |
+          module certmongerlocal 1.0;
+          require {
+              type certmonger_t;
+              type sshd_key_t;
+              class file { getattr open read write };
+          }
+          allow certmonger_t sshd_key_t:file { getattr open read write };
+
+    - name: Compile and install SELinux policy
+      shell: |
+        checkmodule -M -m -o /tmp/certmongerlocal.mod /tmp/certmongerlocal.te
+        semodule_package -o /tmp/certmongerlocal.pp -m /tmp/certmongerlocal.mod
+        semodule -i /tmp/certmongerlocal.pp
+      args:
+        creates: /etc/selinux/targeted/active/modules/100/certmongerlocal
+
+    - name: Ensure correct SELinux context on SSH keys
+      command: restorecon -v {{ ssh_key_path }}
+
+    - name: Request SSH certificate via Certmonger/KDB
+      command: >
+        ipa-getcert request
+        -K "host/{{ ansible_fqdn }}@{{ ipa_realm }}"
+        -f {{ ssh_cert_path }}
+        -k {{ ssh_key_path }}
+        -C "/usr/bin/systemctl reload sshd"
+      register: cert_request
+      failed_when: 
+        - cert_request.rc != 0 
+        - "'already being tracked' not in cert_request.stderr"
+
+    - name: Configure SSHD to use the new certificate
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        line: "HostCertificate {{ ssh_cert_path }}"
+        insertafter: "^#?HostKey"
+      notify: Reload SSHD
+
+    - name: Configure Client-Side Transparent Trust (SSSD)
+      blockinfile:
+        path: /etc/ssh/ssh_config.d/99-ipa-trust.conf
+        create: yes
+        block: |
+          Host *.{{ ipa_realm | lower }}
+              GlobalKnownHostsFile /var/lib/sss/pubconf/known_hosts
+              ProxyCommand /usr/bin/sss_ssh_knownhostsproxy -p %p %h
+
+  handlers:
+    - name: Reload SSHD
+      service:
+        name: sshd
+        state: reloaded

@@ -1,0 +1,32 @@
+---
+- name: Configure SSH CA Trust across all Demo Hosts
+  hosts: web.redhat.lan, db.redhat.lan, filer.redhat.lan, workstation1.redhat.lan
+  become: yes
+  vars:
+    # This is the public key from Vault UI -> Configuration
+    # I uploaded this initially with a bogus key from an old installation"
+    vault_ca_key: "CHANGEME"
+
+  tasks:
+    - name: Ensure the CA public key file exists on the target
+      ansible.builtin.copy:
+        content: "{{ vault_ca_key }}"
+        dest: /etc/ssh/trusted-user-ca-keys.pem
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart SSH
+
+    - name: Update sshd_config to trust the CA
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?TrustedUserCAKeys'
+        line: 'TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem'
+        validate: '/usr/sbin/sshd -t -f %s'
+      notify: Restart SSH
+
+  handlers:
+    - name: Restart SSH
+      ansible.builtin.service:
+        name: sshd
+        state: restarted

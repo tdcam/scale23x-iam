@@ -1,0 +1,64 @@
+1. Setup the Vault CA (The "Passport Office")
+Enable Engine: Enable the SSH secrets engine at ssh-client-signer.
+
+Generate CA: Generate the internal CA key in Vault.
+
+Create Role: Create a role (e.g., scale-demo-role) with:
+
+Max TTL: 1h
+
+Allow User Certificates: true
+
+Allowed Extensions: permit-pty (This is what fixed the hang!)
+
+Default Extensions: {"permit-pty": ""}
+
+2. Establish Trust (The "Customs Agent")
+On every target server (Web, DB, Filer, and the IdM server itself), you must tell SSH to trust the Vault CA.
+
+Get the CA Public Key: Copy the key from the Vault UI (Configuration tab).
+
+Place the Key: Save it to /etc/ssh/trusted-user-ca-keys.pem.
+
+Update Config: Add this line to /etc/ssh/sshd_config:
+
+Plaintext
+TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
+Restart: systemctl restart sshd.
+
+3. The User Workflow (The "Traveler")
+This is what you perform live on stage.
+
+Generate a Local Key: (If you don't have one)
+ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519
+
+Request Signature from Vault:
+
+In the Vault UI, go to the scale-demo-role.
+
+Paste your id_ed25519.pub content.
+
+Set Principal to the target username (e.g., fred.flintstone).
+
+Click Sign and save the output as ~/.ssh/id_ed25519-cert.pub.
+
+Connect:
+ssh fred.flintstone@workstation1
+
+4. Verification Commands (The "Proof")
+Use these during the demo to show the audience what's happening under the hood.
+
+View Certificate Details:
+ssh-keygen -L -f ~/.ssh/id_ed25519-cert.pub
+(Point out the "Valid: from/to" and "Principals" lines).
+
+Check Server Trust:
+cat /etc/ssh/trusted-user-ca-keys.pem
+(Show that the server doesn't have Fred's key, only the CA's key).
+
+Summary of the "Confusing Bits"
+The Principal: Must match the remote username you are logging in as.
+
+The Extension: Without permit-pty, the connection will hang because a terminal can't be opened.
+
+The File Naming: The cert must be named [keyname]-cert.pub and sit next to your private key.
